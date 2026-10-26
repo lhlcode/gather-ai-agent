@@ -1,0 +1,10 @@
+CREATE TABLE users (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    username VARCHAR(64) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(16) NOT NULL DEFAULT 'USER',
+    created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_users_username (username),
+    CONSTRAINT chk_users_role CHECK (role IN ('USER', 'ADMIN'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

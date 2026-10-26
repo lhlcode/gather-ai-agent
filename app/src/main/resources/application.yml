@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: ticket-booking
+  config:
+    import: "optional:file:../.env[.properties]"
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3307/ticket_booking
+    username: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5673
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    connection-timeout: 2s
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6380
+      connect-timeout: 1s
+      timeout: 1s
+app:
+  jwt:
+    issuer: ticket-booking
+
+server:
+  port: 9091

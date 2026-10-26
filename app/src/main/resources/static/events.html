@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>活动列表</title>
+    <style>
+        body { max-width: 700px; margin: 40px auto; font-family: sans-serif; }
+        li { margin: 12px 0; }
+        button { padding: 8px 12px; cursor: pointer; }
+        #detail { margin-top: 30px; padding: 16px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+<h1>已发布活动</h1>
+<p id="message">正在加载…</p>
+<ul id="events"></ul>
+<section id="detail" hidden></section>
+
+<script>
+    const message = document.querySelector("#message");
+    const list = document.querySelector("#events");
+    const detail = document.querySelector("#detail");
+    const beijingFormatter = new Intl.DateTimeFormat("zh-CN", {
+        timeZone: "Asia/Shanghai",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hourCycle: "h23"
+    });
+
+    function formatBeijing(utcText) {
+        // MySQL %f 给出 6 位小数；转换成浏览器标准的 3 位毫秒。
+        const browserUtc = utcText.replace(/\.(\d{3})\d*Z$/, ".$1Z");
+        return beijingFormatter.format(new Date(browserUtc));
+    }
+
+    async function loadEvents() {
+        try {
+            const response = await fetch("/events");
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const events = await response.json();
+            message.textContent = events.length === 0 ? "暂无已发布活动" : "";
+
+            for (const event of events) {
+                const item = document.createElement("li");
+                const button = document.createElement("button");
+                button.type = "button";
+                button.textContent =
+                    `${event.title}（剩余 ${event.availableQuota}/${event.totalQuota}）`;
+                button.addEventListener("click", () => loadDetail(event.id));
+                const timeText = document.createElement("small");
+                timeText.textContent =
+                    `报名：${formatBeijing(event.registrationStartAtUtc)} ～ ` +
+                    `${formatBeijing(event.registrationEndAtUtc)}（北京时间）`;
+
+                item.append(button, document.createElement("br"), timeText);
+                list.append(item);
+            }
+        } catch (error) {
+            message.textContent = `列表加载失败：${error.message}`;
+        }
+    }
+
+    async function loadDetail(id) {
+        detail.hidden = false;
+        detail.textContent = "正在加载详情…";
+
+        try {
+            const response = await fetch(`/events/${encodeURIComponent(id)}`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const event = await response.json();
+            const title = document.createElement("h2");
+            title.textContent = event.title;
+
+            const quota = document.createElement("p");
+            quota.textContent =
+                `活动 ID：${event.id}；剩余名额：${event.availableQuota}/${event.totalQuota}`;
+
+            const registrationTime = document.createElement("p");
+            registrationTime.textContent =
+                `报名时间：${formatBeijing(event.registrationStartAtUtc)} ～ ` +
+                `${formatBeijing(event.registrationEndAtUtc)}（北京时间）`;
+
+            detail.replaceChildren(title, quota, registrationTime);
+        } catch (error) {
+            detail.textContent = `详情加载失败：${error.message}`;
+        }
+    }
+
+    loadEvents();
+</script>
+</body>
+</html>
